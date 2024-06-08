@@ -27,6 +27,9 @@ struct MainScreenView: View {
         "id": 123,
         "name": "John Doe",
         "email": "john.doe@example.com"
+    },
+    "user": {
+        "id": 123
     }
 }
 """

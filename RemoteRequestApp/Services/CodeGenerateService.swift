@@ -46,7 +46,7 @@ class CodeGenerateService {
             var initParams = ""
             var initModelParams = ""
             var initAssignments = ""
-            
+
             for (key, value) in dict {
                 switch value {
                 case is Int:
@@ -134,7 +134,6 @@ class CodeGenerateService {
                     initParams += "\(key): String, "
                     initAssignments += "\(tab)\(tab)self.\(key) = \(key)\n"
                 }
-                initModelParams += "\(tab)\(tab)\(tab)\(key): self.\(key),\n"
             }
             
             codingKeys += "\(tab)}\n"
@@ -143,10 +142,39 @@ class CodeGenerateService {
             structCode += codingKeys
             structCode += "}\n\n"
           
+
+            var guardStatements = ""
+            let respModels = dict.filter({ $0.value is [String: Any] })
+            let simpleModels = dict.filter({ !($0.value is [String: Any]) })
+            
+            if !respModels.isEmpty {
+                guardStatements += "\(tab)\(tab)guard\n"
+
+                respModels.enumerated().forEach({ (index, data) in
+                    let key = data.0
+                    let value = data.1
+                    let isLast = index == respModels.count - 1
+                    
+                    guardStatements += "\(tab)\(tab) let \(key) = self.\(key).createModel()\(isLast ? "" : ",")\n"
+                    if isLast {
+                        guardStatements += "else {\n"
+                        guardStatements += "\(tab)\(tab)return nil\n"
+                        guardStatements += "\(tab)\(tab)}\n"
+                    }
+                    
+                    initModelParams += "\(tab)\(tab)\(tab)\(key): \(key),\n"
+                })
+            }
+            
+            simpleModels.forEach({ (key, value) in
+                initModelParams += "\(tab)\(tab)\(tab)\(key): self.\(key),\n"
+            })
+                        
             if !initModelParams.isEmpty {
                 initModelParams = String(initModelParams.dropLast(2))  //Remove last comma
             }
-            structCode += "\(tab)func createModel() -> \(name.capitalized)Model? {\n"
+            
+            structCode += "\(tab)func createModel() -> \(name.capitalized)Model? {\n\(guardStatements)\n"
             structCode += "\(tab)\(tab)return \(name.capitalized)Model(\n\(initModelParams)\n\(tab)\(tab))\n"
             structCode += "\(tab)}\n"
             
