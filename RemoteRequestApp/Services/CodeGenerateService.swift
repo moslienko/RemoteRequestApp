@@ -21,8 +21,8 @@ class CodeGenerateService {
         var generatedStructs = Set<String>()
         
         func generateStructCode(name: String, dict: [String: Any]) -> (String, String) {
-            var swiftCode = "import Foundation\nimport RemoteRequest\n\n"
-            var structName = "\(name.capitalized)Response"
+            let importCode = "import Foundation\nimport RemoteRequest\n\n"
+            let structName = "\(name.capitalized)Response"
             var structCode = "class \(structName): ObjectMappable {\n"
             structCode += "\n    typealias MappableOutput = \(name.capitalized)Model\n\n"
             var properties = ""
@@ -138,7 +138,7 @@ class CodeGenerateService {
             modelStruct += "    }\n"
             modelStruct += "}\n\n"
             
-            return (swiftCode + structCode, modelStruct)
+            return (importCode + structCode, modelStruct)
         }
         
         let (responseCode, modelCode) = generateStructCode(name: "ApiResponse", dict: jsonDict)
