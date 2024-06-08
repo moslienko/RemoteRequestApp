@@ -36,7 +36,7 @@ struct MainScreenView: View {
     
     @State var codeGenerateResult: CodeGenerateResultModel?
     
-    private static var responseDefaultName = "AppResponse"
+    private static var responseDefaultName = "Api"
     
     init(model: MainScreenViewModel = MainScreenViewModel()) {
         self.viewModel = model
@@ -73,6 +73,9 @@ struct MainScreenView: View {
                     ScrollView {
                         createCodeFilesView(data: codeGenerateResult.responses, title: LocalizedStringKey("generate.response"))
                         createCodeFilesView(data: codeGenerateResult.models, title: LocalizedStringKey("generate.model"))
+                        if let request = codeGenerateResult.request {
+                            createCodeTextView(code: request, name: NSLocalizedString("generate.request", comment: ""))
+                        }
                     }
                 }
             }
@@ -106,24 +109,29 @@ private extension MainScreenView {
                 .buttonStyle(.bordered)
             }
             ForEach(data, id: \.name) { code in
-                VStack(alignment: .leading) {
-                    HStack {
-                        Text(code.name)
-                            .font(.headline)
-                        Spacer()
-                        Button {
-                            let pasteboard = NSPasteboard.general
-                            pasteboard.declareTypes([.string], owner: nil)
-                            pasteboard.setString(code.code, forType: .string)
-                        } label: {
-                            Image(systemName: "doc.on.doc")
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                    TextEditor(text: .constant(code.code))
-                        .frame(minHeight: 50)
-                }
+                createCodeTextView(code: code.code, name: code.name)
             }
+        }
+    }
+    
+    @ViewBuilder
+    func createCodeTextView(code: String, name: String) -> some View {
+        VStack(alignment: .leading) {
+            HStack {
+                Text(name)
+                    .font(.headline)
+                Spacer()
+                Button {
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.declareTypes([.string], owner: nil)
+                    pasteboard.setString(code, forType: .string)
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                }
+                .buttonStyle(.bordered)
+            }
+            TextEditor(text: .constant(code))
+                .frame(minHeight: 50)
         }
     }
 }
@@ -132,7 +140,11 @@ private extension MainScreenView {
 private extension MainScreenView {
     
     func tryGenerateCode() {
-        let result = viewModel.generateService.generateResponseCode(from: text)
+        let result = viewModel.generateService.generateResponseCode(
+            from: text,
+            params: codeGenerateParams,
+            mainApiRespName: mainResponseName
+        )
         switch result {
         case let .success(data):
             self.codeGenerateResult = data

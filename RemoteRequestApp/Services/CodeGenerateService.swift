@@ -9,7 +9,22 @@ import Foundation
 
 class CodeGenerateService {
     
-    func generateResponseCode(from jsonString: String) -> Result<CodeGenerateResultModel, Error> {
+    enum StructType {
+        case resp, model
+        
+        var name: String {
+            switch self {
+            case .resp:
+                return "Response"
+            case .model:
+                return "Model"
+            }
+        }
+    }
+    
+    private let tab = "    "
+    
+    func generateResponseCode(from jsonString: String, params: CodeGenerateParams, mainApiRespName: String) -> Result<CodeGenerateResultModel, Error> {
         guard let jsonData = jsonString.data(using: .utf8),
               let jsonObject = try? JSONSerialization.jsonObject(with: jsonData, options: []),
               let jsonDict = jsonObject as? [String: Any] else {
@@ -24,9 +39,10 @@ class CodeGenerateService {
             let importCode = "import Foundation\nimport RemoteRequest\n\n"
             let structName = "\(name.capitalized)Response"
             var structCode = "class \(structName): ObjectMappable {\n"
-            structCode += "\n    typealias MappableOutput = \(name.capitalized)Model\n\n"
+            structCode += "\n\(tab)typealias MappableOutput = \(name.capitalized)Model\n\n"
             var properties = ""
-            var codingKeys = "    enum CodingKeys: String, CodingKey {\n"
+            var propertiesModel = ""
+            var codingKeys = "\n\(tab)enum CodingKeys: String, CodingKey {\n"
             var initParams = ""
             var initModelParams = ""
             var initAssignments = ""
@@ -34,89 +50,94 @@ class CodeGenerateService {
             for (key, value) in dict {
                 switch value {
                 case is Int:
-                    properties += "    var \(key): Int\n"
-                    codingKeys += "        case \(key) = \"\(key)\"\n"
+                    properties += "\(tab)var \(key): Int\n"
+                    propertiesModel += "\(tab)var \(key): Int\n"
+                    codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
                     initParams += "\(key): Int, "
-                    initAssignments += "        self.\(key) = \(key)\n"
+                    initAssignments += "\(tab)\(tab)self.\(key) = \(key)\n"
                 case is String:
-                    properties += "    var \(key): String\n"
-                    codingKeys += "        case \(key) = \"\(key)\"\n"
+                    properties += "\(tab)var \(key): String\n"
+                    propertiesModel += "\(tab)var \(key): String\n"
+                    codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
                     initParams += "\(key): String, "
-                    initAssignments += "        self.\(key) = \(key)\n"
+                    initAssignments += "\(tab)\(tab)self.\(key) = \(key)\n"
                 case is Double:
-                    properties += "    var \(key): Double\n"
-                    codingKeys += "        case \(key) = \"\(key)\"\n"
+                    properties += "\(tab)var \(key): Double\n"
+                    propertiesModel += "\(tab)var \(key): Double\n"
+                    codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
                     initParams += "\(key): Double, "
-                    initAssignments += "        self.\(key) = \(key)\n"
+                    initAssignments += "\(tab)\(tab)self.\(key) = \(key)\n"
                 case is Bool:
-                    properties += "    var \(key): Bool\n"
-                    codingKeys += "        case \(key) = \"\(key)\"\n"
+                    properties += "\(tab)var \(key): Bool\n"
+                    propertiesModel += "\(tab)var \(key): Bool\n"
+                    codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
                     initParams += "\(key): Bool, "
-                    initAssignments += "        self.\(key) = \(key)\n"
+                    initAssignments += "\(tab)\(tab)self.\(key) = \(key)\n"
                 case let nestedDict as [String: Any]:
                     let nestedStructName = key.capitalized
                     if !generatedStructs.contains(nestedStructName) {
                         let (nestedStructCode, nestedModelCode) = generateStructCode(name: nestedStructName, dict: nestedDict)
-                        responseClasses.append(CodeFileModel(name: nestedStructName, code: nestedStructCode))
-                        domainModels.append(CodeFileModel(name: nestedModelCode, code: nestedStructCode))
+                        responseClasses.append(CodeFileModel(name: "\(nestedStructName)Response", code: nestedStructCode))
+                        domainModels.append(CodeFileModel(name: "\(nestedStructName)Model", code: nestedModelCode))
                         generatedStructs.insert(nestedStructName)
                     }
-                    properties += "    var \(key): \(nestedStructName)Response\n"
-                    codingKeys += "        case \(key) = \"\(key)\"\n"
-                    initParams += "\(key): \(nestedStructName)Response, "
-                    initAssignments += "        self.\(key) = \(key)\n"
+                    properties += "\(tab)var \(key): \(nestedStructName)Response\n"
+                    propertiesModel += "\(tab)var \(key): \(nestedStructName)Model\n"
+                    codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
+                    initParams += "\(key): \(nestedStructName)Model, "
+                    initAssignments += "\(tab)\(tab)self.\(key) = \(key)\n"
                 case let array as [Any]:
                     if let firstElement = array.first {
                         switch firstElement {
                         case is Int:
-                            properties += "    var \(key): [Int]\n"
-                            codingKeys += "        case \(key) = \"\(key)\"\n"
+                            properties += "\(tab)var \(key): [Int]\n"
+                            codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
                             initParams += "\(key): [Int], "
-                            initAssignments += "        self.\(key) = \(key)\n"
+                            initAssignments += "\(tab)\(tab)self.\(key) = \(key)\n"
                         case is String:
-                            properties += "    var \(key): [String]\n"
-                            codingKeys += "        case \(key) = \"\(key)\"\n"
+                            properties += "\(tab)var \(key): [String]\n"
+                            codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
                             initParams += "\(key): [String], "
-                            initAssignments += "        self.\(key) = \(key)\n"
+                            initAssignments += "\(tab)\(tab)self.\(key) = \(key)\n"
                         case is Double:
-                            properties += "    var \(key): [Double]\n"
-                            codingKeys += "        case \(key) = \"\(key)\"\n"
+                            properties += "\(tab)var \(key): [Double]\n"
+                            codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
                             initParams += "\(key): [Double], "
-                            initAssignments += "        self.\(key) = \(key)\n"
+                            initAssignments += "\(tab)\(tab)self.\(key) = \(key)\n"
                         case is Bool:
-                            properties += "    var \(key): [Bool]\n"
-                            codingKeys += "        case \(key) = \"\(key)\"\n"
+                            properties += "\(tab)var \(key): [Bool]\n"
+                            codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
                             initParams += "\(key): [Bool], "
-                            initAssignments += "        self.\(key) = \(key)\n"
+                            initAssignments += "\(tab)\(tab)self.\(key) = \(key)\n"
                         case let elementDict as [String: Any]:
                             let nestedStructName = key.capitalized
                             if !generatedStructs.contains(nestedStructName) {
                                 let (nestedStructCode, nestedModelCode) = generateStructCode(name: nestedStructName, dict: elementDict)
                                 responseClasses.append(CodeFileModel(name: nestedStructName, code: nestedStructCode))
-                                domainModels.append(CodeFileModel(name: nestedModelCode, code: nestedStructCode))
+                                domainModels.append(CodeFileModel(name: "nestedModelCode", code: nestedModelCode))
                                 generatedStructs.insert(nestedStructName)
                             }
-                            properties += "    var \(key): [\(nestedStructName)Response]\n"
-                            codingKeys += "        case \(key) = \"\(key)\"\n"
+                            properties += "\(tab)var \(key): [\(nestedStructName)Response]\n"
+                            codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
                             initParams += "\(key): [\(nestedStructName)Response], "
-                            initAssignments += "        self.\(key) = \(key)\n"
+                            initAssignments += "\(tab)\(tab)self.\(key) = \(key)\n"
                         default:
-                            properties += "    var \(key): [String]\n"
-                            codingKeys += "        case \(key) = \"\(key)\"\n"
+                            properties += "\(tab)var \(key): [String]\n"
+                            codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
                             initParams += "\(key): [String], "
-                            initAssignments += "        self.\(key) = \(key)\n"
+                            initAssignments += "\(tab)\(tab)self.\(key) = \(key)\n"
                         }
                     }
                 default:
-                    properties += "    var \(key): String\n"
-                    codingKeys += "        case \(key) = \"\(key)\"\n"
+                    properties += "\(tab)var \(key): String\n"
+                    codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
                     initParams += "\(key): String, "
-                    initAssignments += "        self.\(key) = \(key)\n"
+                    initAssignments += "\(tab)\(tab)self.\(key) = \(key)\n"
                 }
-                initModelParams += "\(key): self.\(key),\n"
+                initModelParams += "\(tab)\(tab)\(tab)\(key): self.\(key),\n"
             }
             
-            codingKeys += "    }\n"
+            codingKeys += "\(tab)}\n"
             
             structCode += properties
             structCode += codingKeys
@@ -125,31 +146,35 @@ class CodeGenerateService {
             if !initModelParams.isEmpty {
                 initModelParams = String(initModelParams.dropLast(2))  //Remove last comma
             }
-            structCode += "    func createModel() -> \(name.capitalized)Model? {\n"
-            structCode += "        return \(name.capitalized)Model(\n\(initModelParams)\n)\n"
-            structCode += "    }\n"
+            structCode += "\(tab)func createModel() -> \(name.capitalized)Model? {\n"
+            structCode += "\(tab)\(tab)return \(name.capitalized)Model(\n\(initModelParams)\n\(tab)\(tab))\n"
+            structCode += "\(tab)}\n"
             
             structCode += "}\n\n"
             
+            if !initParams.isEmpty {
+                initParams = String(initParams.dropLast(2))
+            }
+            
             var modelStruct = "struct \(name.capitalized)Model {\n"
-            modelStruct += properties
-            modelStruct += "    init(\(initParams)) {\n"
+            modelStruct += propertiesModel
+            modelStruct += "\n\(tab)init(\(initParams)) {\n"
             modelStruct += initAssignments
-            modelStruct += "    }\n"
+            modelStruct += "\(tab)}\n"
             modelStruct += "}\n\n"
             
             return (importCode + structCode, modelStruct)
         }
         
-        let (responseCode, modelCode) = generateStructCode(name: "ApiResponse", dict: jsonDict)
-        let modelName = "\(jsonDict.first?.key.capitalized ?? "-")Model"
-        responseClasses.append(CodeFileModel(name: "1", code: responseCode))
-        domainModels.append(CodeFileModel(name: modelName, code: modelCode))
+        let (responseCode, modelCode) = generateStructCode(name: mainApiRespName, dict: jsonDict)
+        print("responseCode - \(responseCode), modelCode - \(modelCode)")
+        responseClasses.append(CodeFileModel(name: "\(mainApiRespName)Response", code: responseCode))
+        domainModels.append(CodeFileModel(name: "\(mainApiRespName)Model", code: modelCode))
         
         let resultModel = CodeGenerateResultModel(
-            responses: responseClasses,
-            models: domainModels,
-            request: "request..."
+            responses: params.isResponseOn ? responseClasses : [],
+            models: params.isModelOn ? domainModels : [],
+            request: params.isRequestOn ? "request..." : nil
         )
         return .success(resultModel)
     }
