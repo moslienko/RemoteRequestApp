@@ -24,8 +24,8 @@ class CodeGenerateService {
     
     private let tab = "    "
     
-    func generateResponseCode(from jsonString: String, params: CodeGenerateParams, mainApiRespName: String) -> Result<CodeGenerateResultModel, Error> {
-        guard let jsonData = jsonString.data(using: .utf8),
+    func generateResponseCode(params: CodeGenerateParams) -> Result<CodeGenerateResultModel, Error> {
+        guard let jsonData = params.jsonText.data(using: .utf8),
               let jsonObject = try? JSONSerialization.jsonObject(with: jsonData, options: []),
               let jsonDict = jsonObject as? [String: Any] else {
             return .failure(NSError(domain: "Invalid JSON string", code: 0))
@@ -39,6 +39,10 @@ class CodeGenerateService {
             let importCode = "import Foundation\nimport RemoteRequest\n\n"
             let structName = "\(name.capitalized)Response"
             var structCode = "class \(structName): ObjectMappable {\n"
+            
+            let requestName = "\(name.capitalized)Request"
+            var requestCode = "struct \(structName): InputBodyObject {\n"
+            
             structCode += "\n\(tab)typealias MappableOutput = \(name.capitalized)Model\n\n"
             var properties = ""
             var propertiesModel = ""
@@ -46,7 +50,7 @@ class CodeGenerateService {
             var initParams = ""
             var initModelParams = ""
             var initAssignments = ""
-
+            
             for (key, value) in dict {
                 switch value {
                 case is Int:
@@ -141,15 +145,15 @@ class CodeGenerateService {
             structCode += properties
             structCode += codingKeys
             structCode += "}\n\n"
-          
-
+            
+            
             var guardStatements = ""
             let respModels = dict.filter({ $0.value is [String: Any] })
             let simpleModels = dict.filter({ !($0.value is [String: Any]) })
             
             if !respModels.isEmpty {
                 guardStatements += "\(tab)\(tab)guard\n"
-
+                
                 respModels.enumerated().forEach({ (index, data) in
                     let key = data.0
                     let value = data.1
@@ -169,7 +173,7 @@ class CodeGenerateService {
             simpleModels.forEach({ (key, value) in
                 initModelParams += "\(tab)\(tab)\(tab)\(key): self.\(key),\n"
             })
-                        
+            
             if !initModelParams.isEmpty {
                 initModelParams = String(initModelParams.dropLast(2))  //Remove last comma
             }
@@ -194,16 +198,46 @@ class CodeGenerateService {
             return (importCode + structCode, modelStruct)
         }
         
-        let (responseCode, modelCode) = generateStructCode(name: mainApiRespName, dict: jsonDict)
+        let (responseCode, modelCode) = generateStructCode(name: params.mainResponseName, dict: jsonDict)
         print("responseCode - \(responseCode), modelCode - \(modelCode)")
-        responseClasses.append(CodeFileModel(name: "\(mainApiRespName)Response", code: responseCode))
-        domainModels.append(CodeFileModel(name: "\(mainApiRespName)Model", code: modelCode))
+        responseClasses.append(CodeFileModel(name: "\(params.mainResponseName)Response", code: responseCode))
+        domainModels.append(CodeFileModel(name: "\(params.mainResponseName)Model", code: modelCode))
+        
+        let routeCode = generateRoute(
+            method: params.method,
+            url: params.url,
+            modelName: params.mainResponseName
+        )
         
         let resultModel = CodeGenerateResultModel(
             responses: params.isResponseOn ? responseClasses : [],
             models: params.isModelOn ? domainModels : [],
-            request: params.isRequestOn ? "request..." : nil
+            request: params.isRequestOn ? "" : nil,
+            route: params.isRouteOn ? routeCode : nil
         )
         return .success(resultModel)
+    }
+    
+    func generateRoute(method: HTTPMethod, url: String, modelName: String) -> String {
+        var pathURL: String {
+            if url.isEmpty {
+                return "/"
+            }
+            return url
+        }
+        
+        let importCode = "import Foundation\nimport RemoteRequest\n\n"
+        var structCode = "struct Routes {\n\(tab)private static var baseURL = \"/\"\n\n"
+        
+        structCode += """
+    \(tab)// Select one of the methods\n
+    \(tab)func fetchItems(completion: @escaping (ResultData<[\(modelName)Model]>) -> Void) {
+    \(tab)\(tab)@Route<[\(modelName)Response], [\(modelName)Model], RegRestErrorResponse>(Routes.baseURL + "\(url)", method: .\(method.rawValue.lowercased())
+    \(tab)\(tab)var request: URLRequest
+    \(tab)\(tab)_request.runRequest(completion: completion)
+    \(tab)}
+    """
+        
+        return importCode + structCode
     }
 }
