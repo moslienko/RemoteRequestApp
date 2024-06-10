@@ -11,4 +11,5 @@ struct CodeGenerateResultModel {
     var responses: [CodeFileModel]
     var models: [CodeFileModel]
     var request: String?
+    var route: String?
 }

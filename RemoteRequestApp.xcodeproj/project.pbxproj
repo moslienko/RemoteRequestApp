@@ -17,6 +17,7 @@
 		9569398C2C1422E3005A95DA /* CodeGenerateResultModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9569398B2C1422E3005A95DA /* CodeGenerateResultModel.swift */; };
 		9569398E2C142354005A95DA /* CodeGenerateParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9569398D2C142354005A95DA /* CodeGenerateParams.swift */; };
 		956939902C142BE8005A95DA /* CodeFileModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9569398F2C142BE8005A95DA /* CodeFileModel.swift */; };
+		95AD62282C169C7E008A8E8F /* HTTPMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95AD62272C169C7E008A8E8F /* HTTPMethod.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 		9569398B2C1422E3005A95DA /* CodeGenerateResultModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeGenerateResultModel.swift; sourceTree = "<group>"; };
 		9569398D2C142354005A95DA /* CodeGenerateParams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeGenerateParams.swift; sourceTree = "<group>"; };
 		9569398F2C142BE8005A95DA /* CodeFileModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeFileModel.swift; sourceTree = "<group>"; };
+		95AD62272C169C7E008A8E8F /* HTTPMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPMethod.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,6 +99,7 @@
 			isa = PBXGroup;
 			children = (
 				9569398A2C1422D6005A95DA /* CodeGenModels */,
+				95AD62272C169C7E008A8E8F /* HTTPMethod.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -199,6 +202,8 @@
 			dependencies = (
 			);
 			name = RemoteRequestApp;
+			packageProductDependencies = (
+			);
 			productName = RemoteRequestApp;
 			productReference = 956939652C140818005A95DA /* RemoteRequestApp.app */;
 			productType = "com.apple.product-type.application";
@@ -228,6 +233,8 @@
 				ru,
 			);
 			mainGroup = 9569395C2C140818005A95DA;
+			packageReferences = (
+			);
 			productRefGroup = 956939662C140818005A95DA /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -259,6 +266,7 @@
 				956939692C140818005A95DA /* RemoteRequestAppApp.swift in Sources */,
 				956939872C1414D8005A95DA /* MainScreenViewModel.swift in Sources */,
 				9569398C2C1422E3005A95DA /* CodeGenerateResultModel.swift in Sources */,
+				95AD62282C169C7E008A8E8F /* HTTPMethod.swift in Sources */,
 				956939892C141A03005A95DA /* CodeGenerateService.swift in Sources */,
 				956939902C142BE8005A95DA /* CodeFileModel.swift in Sources */,
 				9569398E2C142354005A95DA /* CodeGenerateParams.swift in Sources */,
