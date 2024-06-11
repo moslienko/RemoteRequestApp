@@ -72,9 +72,7 @@ struct MainScreenView: View {
                     ScrollView {
                         createCodeFilesView(data: codeGenerateResult.responses, title: LocalizedStringKey("generate.response"))
                         createCodeFilesView(data: codeGenerateResult.models, title: LocalizedStringKey("generate.model"))
-                        if let request = codeGenerateResult.request {
-                            createCodeTextView(code: request, name: NSLocalizedString("generate.request_body", comment: ""))
-                        }
+                        createCodeFilesView(data: codeGenerateResult.requests, title: LocalizedStringKey("generate.request_body"))
                         if let route = codeGenerateResult.route {
                             createCodeTextView(code: route, name: NSLocalizedString("generate.route", comment: ""))
                         }

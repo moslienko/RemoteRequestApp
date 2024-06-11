@@ -33,15 +33,14 @@ class CodeGenerateService {
         
         var responseClasses: [CodeFileModel] = []
         var domainModels: [CodeFileModel] = []
+        var requestModels: [CodeFileModel] = []
+
         var generatedStructs = Set<String>()
         
         func generateStructCode(name: String, dict: [String: Any]) -> (String, String) {
             let importCode = "import Foundation\nimport RemoteRequest\n\n"
             let structName = "\(name.capitalized)Response"
             var structCode = "class \(structName): ObjectMappable {\n"
-            
-            let requestName = "\(name.capitalized)Request"
-            var requestCode = "struct \(structName): InputBodyObject {\n"
             
             structCode += "\n\(tab)typealias MappableOutput = \(name.capitalized)Model\n\n"
             var properties = ""
@@ -198,11 +197,95 @@ class CodeGenerateService {
             return (importCode + structCode, modelStruct)
         }
         
+        func generateRequestCode(name: String, dict: [String: Any]) -> String {
+            let importCode = "import Foundation\nimport RemoteRequest\n\n"
+            let requestName = "\(name)"
+            var requestCode = "struct \(requestName): InputBodyObject {\n"
+            
+            var properties = ""
+            var propertiesModel = ""
+            var codingKeys = "\n\(tab)enum CodingKeys: String, CodingKey {\n"
+            
+            for (key, value) in dict {
+                switch value {
+                case is Int:
+                    properties += "\(tab)var \(key): Int\n"
+                    propertiesModel += "\(tab)var \(key): Int\n"
+                    codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
+                case is String:
+                    properties += "\(tab)var \(key): String\n"
+                    propertiesModel += "\(tab)var \(key): String\n"
+                    codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
+                case is Double:
+                    properties += "\(tab)var \(key): Double\n"
+                    propertiesModel += "\(tab)var \(key): Double\n"
+                    codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
+                case is Bool:
+                    properties += "\(tab)var \(key): Bool\n"
+                    propertiesModel += "\(tab)var \(key): Bool\n"
+                    codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
+                case let nestedDict as [String: Any]:
+                    let nestedStructName = key.capitalized + "Request"
+
+                    if !generatedStructs.contains(nestedStructName) {
+                        let nestedStructCode = generateRequestCode(name: nestedStructName, dict: nestedDict)
+                        requestModels.append(CodeFileModel(name: "\(nestedStructName)Request", code: nestedStructCode))
+                        generatedStructs.insert(nestedStructName)
+                    }
+                    properties += "\(tab)var \(key): \(nestedStructName)\n"
+                    propertiesModel += "\(tab)var \(key): \(nestedStructName)Model\n"
+                    codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
+                case let array as [Any]:
+                    if let firstElement = array.first {
+                        switch firstElement {
+                        case is Int:
+                            properties += "\(tab)var \(key): [Int]\n"
+                            codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
+                        case is String:
+                            properties += "\(tab)var \(key): [String]\n"
+                            codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
+                        case is Double:
+                            properties += "\(tab)var \(key): [Double]\n"
+                            codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
+                        case is Bool:
+                            properties += "\(tab)var \(key): [Bool]\n"
+                            codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
+                        case let elementDict as [String: Any]:
+                            let nestedStructName = key.capitalized + "Request"
+                            if !generatedStructs.contains(nestedStructName) {
+                                let nestedStructCode = generateRequestCode(name: nestedStructName, dict: elementDict)
+                                requestModels.append(CodeFileModel(name: nestedStructName, code: nestedStructCode))
+                                generatedStructs.insert(nestedStructName)
+                            }
+                            properties += "\(tab)var \(key): [\(nestedStructName)]\n"
+                            codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
+                        default:
+                            properties += "\(tab)var \(key): [String]\n"
+                            codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
+                        }
+                    }
+                default:
+                    properties += "\(tab)var \(key): String\n"
+                    codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
+                }
+            }
+            
+            codingKeys += "\(tab)}\n"
+            
+            requestCode += properties
+            requestCode += codingKeys
+            requestCode += "}\n\n"
+            
+            return importCode + requestCode
+        }
         let (responseCode, modelCode) = generateStructCode(name: params.mainResponseName, dict: jsonDict)
         print("responseCode - \(responseCode), modelCode - \(modelCode)")
         responseClasses.append(CodeFileModel(name: "\(params.mainResponseName)Response", code: responseCode))
         domainModels.append(CodeFileModel(name: "\(params.mainResponseName)Model", code: modelCode))
         
+        let requestCode = generateRequestCode(name: "\(params.mainResponseName)Request", dict: jsonDict)
+        requestModels.append(CodeFileModel(name: "\(params.mainResponseName)", code: requestCode))
+
         let routeCode = generateRoute(
             method: params.method,
             url: params.url,
@@ -212,7 +295,7 @@ class CodeGenerateService {
         let resultModel = CodeGenerateResultModel(
             responses: params.isResponseOn ? responseClasses : [],
             models: params.isModelOn ? domainModels : [],
-            request: params.isRequestOn ? "" : nil,
+            requests: params.isRequestOn ? requestModels : [],
             route: params.isRouteOn ? routeCode : nil
         )
         return .success(resultModel)

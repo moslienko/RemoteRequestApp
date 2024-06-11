@@ -10,6 +10,6 @@ import Foundation
 struct CodeGenerateResultModel {
     var responses: [CodeFileModel]
     var models: [CodeFileModel]
-    var request: String?
+    var requests: [CodeFileModel]
     var route: String?
 }
