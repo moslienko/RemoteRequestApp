@@ -34,7 +34,7 @@ class CodeGenerateService {
         var responseClasses: [CodeFileModel] = []
         var domainModels: [CodeFileModel] = []
         var requestModels: [CodeFileModel] = []
-
+        
         var generatedStructs = Set<String>()
         
         func generateStructCode(name: String, dict: [String: Any]) -> (String, String) {
@@ -226,7 +226,7 @@ class CodeGenerateService {
                     codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
                 case let nestedDict as [String: Any]:
                     let nestedStructName = key.capitalized + "Request"
-
+                    
                     if !generatedStructs.contains(nestedStructName) {
                         let nestedStructCode = generateRequestCode(name: nestedStructName, dict: nestedDict)
                         requestModels.append(CodeFileModel(name: "\(nestedStructName)Request", code: nestedStructCode))
@@ -285,7 +285,7 @@ class CodeGenerateService {
         
         let requestCode = generateRequestCode(name: "\(params.mainResponseName)Request", dict: jsonDict)
         requestModels.append(CodeFileModel(name: "\(params.mainResponseName)", code: requestCode))
-
+        
         let routeCode = generateRoute(
             method: params.method,
             url: params.url,
@@ -311,14 +311,31 @@ class CodeGenerateService {
         
         let importCode = "import Foundation\nimport RemoteRequest\n\n"
         var structCode = "struct Routes {\n\(tab)private static var baseURL = \"/\"\n\n"
-        
+        // @Route
         structCode += """
     \(tab)// Select one of the methods\n
     \(tab)func fetchItems(completion: @escaping (ResultData<[\(modelName)Model]>) -> Void) {
-    \(tab)\(tab)@Route<[\(modelName)Response], [\(modelName)Model], RegRestErrorResponse>(Routes.baseURL + "\(url)", method: .\(method.rawValue.lowercased())
+    \(tab)\(tab)@Route<[\(modelName)Response], [\(modelName)Model], RegRestErrorResponse>(Routes.baseURL + "\(url)", method: .\(method.rawValue.lowercased()))"
     \(tab)\(tab)var request: URLRequest
     \(tab)\(tab)_request.runRequest(completion: completion)
-    \(tab)}
+    \(tab)}\n\n
+    """
+        // @Method
+        structCode += """
+    \(tab)func fetchItems(completion: @escaping (ResultData<[\(modelName)Model]>) -> Void) {
+    \(tab)\(tab)@\(method.rawValue.uppercased())<[\(modelName)Response], [\(modelName)Model], RegRestErrorResponse>(Routes.baseURL + "\(url)")
+    \(tab)\(tab)var request: RouteRestProtocol
+    \(tab)\(tab)request.runRequest(completion: completion)
+    \(tab)}\n\n
+    """
+        // Async/await
+        structCode += """
+    \(tab)@available(iOS 15.0, *)
+    \(tab)func fetchItemsAwait() async throws -> Result<[\(modelName)Model], Error> {
+    \(tab)\(tab)@Route<[\(modelName)Response], [\(modelName)Model], RegRestErrorResponse>(Routes.baseURL + "\(url)", method: .\(method.rawValue.lowercased()))"
+    \(tab)\(tab)var request: URLRequest
+    \(tab)\(tab)return try await _request.runRequest()
+    \(tab)}\n\n
     """
         
         return importCode + structCode
