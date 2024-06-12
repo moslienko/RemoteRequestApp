@@ -11,5 +11,9 @@ import SwiftUI
 
 public class MainScreenViewModel: ObservableObject {
     
+    var generateService: CodeGenerateService
     
+    init(generateService: CodeGenerateService = CodeGenerateService()) {
+        self.generateService = generateService
+    }
 }

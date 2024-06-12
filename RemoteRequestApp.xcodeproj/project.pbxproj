@@ -13,6 +13,11 @@
 		956939702C14081A005A95DA /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9569396F2C14081A005A95DA /* Preview Assets.xcassets */; };
 		956939782C140B5F005A95DA /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 956939772C140B5F005A95DA /* Localizable.xcstrings */; };
 		956939872C1414D8005A95DA /* MainScreenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 956939862C1414D8005A95DA /* MainScreenViewModel.swift */; };
+		956939892C141A03005A95DA /* CodeGenerateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 956939882C141A03005A95DA /* CodeGenerateService.swift */; };
+		9569398C2C1422E3005A95DA /* CodeGenerateResultModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9569398B2C1422E3005A95DA /* CodeGenerateResultModel.swift */; };
+		9569398E2C142354005A95DA /* CodeGenerateParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9569398D2C142354005A95DA /* CodeGenerateParams.swift */; };
+		956939902C142BE8005A95DA /* CodeFileModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9569398F2C142BE8005A95DA /* CodeFileModel.swift */; };
+		95AD62282C169C7E008A8E8F /* HTTPMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95AD62272C169C7E008A8E8F /* HTTPMethod.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +29,11 @@
 		956939712C14081A005A95DA /* RemoteRequestApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RemoteRequestApp.entitlements; sourceTree = "<group>"; };
 		956939772C140B5F005A95DA /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		956939862C1414D8005A95DA /* MainScreenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainScreenViewModel.swift; sourceTree = "<group>"; };
+		956939882C141A03005A95DA /* CodeGenerateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeGenerateService.swift; sourceTree = "<group>"; };
+		9569398B2C1422E3005A95DA /* CodeGenerateResultModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeGenerateResultModel.swift; sourceTree = "<group>"; };
+		9569398D2C142354005A95DA /* CodeGenerateParams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeGenerateParams.swift; sourceTree = "<group>"; };
+		9569398F2C142BE8005A95DA /* CodeFileModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeFileModel.swift; sourceTree = "<group>"; };
+		95AD62272C169C7E008A8E8F /* HTTPMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPMethod.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,6 +98,8 @@
 		9569397A2C140F9A005A95DA /* Data */ = {
 			isa = PBXGroup;
 			children = (
+				9569398A2C1422D6005A95DA /* CodeGenModels */,
+				95AD62272C169C7E008A8E8F /* HTTPMethod.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -104,6 +116,7 @@
 		9569397C2C140FAF005A95DA /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				956939882C141A03005A95DA /* CodeGenerateService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -163,6 +176,16 @@
 			path = "Main Flow";
 			sourceTree = "<group>";
 		};
+		9569398A2C1422D6005A95DA /* CodeGenModels */ = {
+			isa = PBXGroup;
+			children = (
+				9569398B2C1422E3005A95DA /* CodeGenerateResultModel.swift */,
+				9569398D2C142354005A95DA /* CodeGenerateParams.swift */,
+				9569398F2C142BE8005A95DA /* CodeFileModel.swift */,
+			);
+			path = CodeGenModels;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -179,6 +202,8 @@
 			dependencies = (
 			);
 			name = RemoteRequestApp;
+			packageProductDependencies = (
+			);
 			productName = RemoteRequestApp;
 			productReference = 956939652C140818005A95DA /* RemoteRequestApp.app */;
 			productType = "com.apple.product-type.application";
@@ -208,6 +233,8 @@
 				ru,
 			);
 			mainGroup = 9569395C2C140818005A95DA;
+			packageReferences = (
+			);
 			productRefGroup = 956939662C140818005A95DA /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -238,6 +265,11 @@
 				9569396B2C140818005A95DA /* MainScreenView.swift in Sources */,
 				956939692C140818005A95DA /* RemoteRequestAppApp.swift in Sources */,
 				956939872C1414D8005A95DA /* MainScreenViewModel.swift in Sources */,
+				9569398C2C1422E3005A95DA /* CodeGenerateResultModel.swift in Sources */,
+				95AD62282C169C7E008A8E8F /* HTTPMethod.swift in Sources */,
+				956939892C141A03005A95DA /* CodeGenerateService.swift in Sources */,
+				956939902C142BE8005A95DA /* CodeFileModel.swift in Sources */,
+				9569398E2C142354005A95DA /* CodeGenerateParams.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -297,7 +329,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.1;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -354,7 +386,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.1;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
