@@ -33,6 +33,6 @@ class CodeGenerateParams: ObservableObject {
     @Published var method: HTTPMethod = .get
     
     var isAllowGenerate: Bool {
-        isResponseOn || isModelOn || isRequestOn || isRouteOn
+        (isResponseOn || isModelOn || isRequestOn || isRouteOn) && !jsonText.isEmpty
     }
 }

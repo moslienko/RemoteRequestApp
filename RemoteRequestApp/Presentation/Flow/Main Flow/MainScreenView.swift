@@ -11,13 +11,10 @@ struct MainScreenView: View {
     
     @ObservedObject var viewModel: MainScreenViewModel
     @ObservedObject var codeGenerateParams: CodeGenerateParams
-    
-    @State var response: String = ""
-    @State var model: String = ""
-    @State var request: String = ""
-    
+
     @State var codeGenerateResult: CodeGenerateResultModel?
-        
+    @State var error: Error?
+
     init(model: MainScreenViewModel = MainScreenViewModel()) {
         self.viewModel = model
         self.codeGenerateParams = CodeGenerateParams()
@@ -25,59 +22,9 @@ struct MainScreenView: View {
     
     var body: some View {
         HStack {
-            VStack {
-                if codeGenerateParams.isRouteOn {
-                    HStack {
-                        Picker(selection: $codeGenerateParams.method) {
-                            ForEach(HTTPMethod.allCases, id:\.self ) { i in
-                                Text(i.rawValue)
-                            }
-                        } label: { }
-                            .frame(width: 84)
-                        TextField(LocalizedStringKey("generate.url"), text: $codeGenerateParams.url)
-                    }
-                }
-                TextField(LocalizedStringKey("generate.response_name"), text: $codeGenerateParams.mainResponseName)
-                TextEditor(text: $codeGenerateParams.jsonText)
-                VStack(alignment: .leading) {
-                    HStack {
-                        Toggle(isOn: $codeGenerateParams.isResponseOn) {
-                            Text(LocalizedStringKey("generate.response"))
-                        }
-                        .toggleStyle(.checkbox)
-                        Toggle(isOn: $codeGenerateParams.isModelOn) {
-                            Text(LocalizedStringKey("generate.model"))
-                        }
-                        .toggleStyle(.checkbox)
-                    }
-                    HStack {
-                        Toggle(isOn: $codeGenerateParams.isRequestOn) {
-                            Text(LocalizedStringKey("generate.request_body"))
-                        }
-                        .toggleStyle(.checkbox)
-                        Toggle(isOn: $codeGenerateParams.isRouteOn) {
-                            Text(LocalizedStringKey("generate.route"))
-                        }
-                        .toggleStyle(.checkbox)
-                    }
-                }
-                Button(LocalizedStringKey("generate.title"), action: {
-                    self.tryGenerateCode()
-                })
-                .buttonStyle(.borderedProminent)
-                .disabled(!codeGenerateParams.isAllowGenerate)
-            }
+            createFormView()
             VStack(alignment: .leading) {
-                if let codeGenerateResult = self.codeGenerateResult {
-                    ScrollView {
-                        createCodeFilesView(data: codeGenerateResult.responses, title: LocalizedStringKey("generate.response"))
-                        createCodeFilesView(data: codeGenerateResult.models, title: LocalizedStringKey("generate.model"))
-                        createCodeFilesView(data: codeGenerateResult.requests, title: LocalizedStringKey("generate.request_body"))
-                        if let route = codeGenerateResult.route {
-                            createCodeTextView(code: route, name: NSLocalizedString("generate.route", comment: ""))
-                        }
-                    }
-                }
+                createCodeGenerateView()
             }
         }
         .padding()
@@ -86,6 +33,71 @@ struct MainScreenView: View {
 
 // MARK: - UI
 private extension MainScreenView {
+    
+    @ViewBuilder
+    func createFormView() -> some View {
+        VStack {
+            if codeGenerateParams.isRouteOn {
+                HStack {
+                    Picker(selection: $codeGenerateParams.method) {
+                        ForEach(HTTPMethod.allCases, id:\.self ) { i in
+                            Text(i.rawValue)
+                        }
+                    } label: { }
+                        .frame(width: 84)
+                    TextField(LocalizedStringKey("generate.url"), text: $codeGenerateParams.url)
+                }
+            }
+            TextField(LocalizedStringKey("generate.response_name"), text: $codeGenerateParams.mainResponseName)
+            TextEditor(text: $codeGenerateParams.jsonText)
+            VStack(alignment: .leading) {
+                HStack {
+                    Toggle(isOn: $codeGenerateParams.isResponseOn) {
+                        Text(LocalizedStringKey("generate.response"))
+                    }
+                    .toggleStyle(.checkbox)
+                    Toggle(isOn: $codeGenerateParams.isModelOn) {
+                        Text(LocalizedStringKey("generate.model"))
+                    }
+                    .toggleStyle(.checkbox)
+                }
+                HStack {
+                    Toggle(isOn: $codeGenerateParams.isRequestOn) {
+                        Text(LocalizedStringKey("generate.request_body"))
+                    }
+                    .toggleStyle(.checkbox)
+                    Toggle(isOn: $codeGenerateParams.isRouteOn) {
+                        Text(LocalizedStringKey("generate.route"))
+                    }
+                    .toggleStyle(.checkbox)
+                }
+            }
+            Button(LocalizedStringKey("generate.title"), action: {
+                self.tryGenerateCode()
+            })
+            .buttonStyle(.borderedProminent)
+            .disabled(!codeGenerateParams.isAllowGenerate)
+        }
+    }
+    
+    @ViewBuilder
+    func createCodeGenerateView() -> some View {
+        if let error = self.error {
+            Text(verbatim: error.localizedDescription)
+                .font(.callout)
+            Spacer()
+        }
+        if let codeGenerateResult = self.codeGenerateResult {
+            ScrollView {
+                createCodeFilesView(data: codeGenerateResult.responses, title: LocalizedStringKey("generate.response"))
+                createCodeFilesView(data: codeGenerateResult.models, title: LocalizedStringKey("generate.model"))
+                createCodeFilesView(data: codeGenerateResult.requests, title: LocalizedStringKey("generate.request_body"))
+                if let route = codeGenerateResult.route {
+                    createCodeTextView(code: route, name: NSLocalizedString("generate.route", comment: ""))
+                }
+            }
+        }
+    }
     
     @ViewBuilder
     func createCodeFilesView(data: [CodeFileModel], title: LocalizedStringKey) -> some View {
@@ -145,9 +157,12 @@ private extension MainScreenView {
         )
         switch result {
         case let .success(data):
+            self.error = nil
             self.codeGenerateResult = data
-        case let .failure(failure):
-            print("tryGenerateCode failure - \(failure)")
+        case let .failure(error):
+            print("tryGenerateCode failure - \(error)")
+            self.error = error
+            self.codeGenerateResult = nil
         }
     }
 }
