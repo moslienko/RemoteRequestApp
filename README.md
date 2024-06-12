@@ -1,5 +1,5 @@
 <p align="center">
-   <img width="200" src="https://moslienko.github.io/Assets/RemoteRequestApp/appIcon.png " alt="RemoteRequestApp Logo">
+   <img width="200" src="https://moslienko.github.io/Assets/RemoteRequestApp/appIcon.png" alt="RemoteRequestApp Logo">
 </p>
 
 <p align="center">
