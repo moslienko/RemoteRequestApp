@@ -117,7 +117,7 @@ final class CodeGenerateService {
                         case let elementDict as [String: Any]:
                             let nestedStructName = key.capitalized
                             if !generatedStructs.contains(nestedStructName) {
-                                let (nestedStructCode, nestedModelCode) = generateStructCode(name: nestedStructName, dict: elementDict)
+                                let (nestedStructCode, _) = generateStructCode(name: nestedStructName, dict: elementDict)
                                 responseClasses.append(CodeFileModel(name: nestedStructName, code: nestedStructCode))
                                 generatedStructs.insert(nestedStructName)
                             }
