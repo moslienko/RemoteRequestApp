@@ -13,10 +13,7 @@
 
 # RemoteRequest App
 
-<p align="center">
-Application for code generation of server requests for use with the library [RemoteRequest](https://github.com/moslienko/RemoteRequest).
-</p>
-
+Application for code generation of server requests for use with the library [RemoteRequest](https://github.com/moslienko/RemoteRequest/).
 
 <p align="center">
   <img src="https://moslienko.github.io/Assets/RemoteRequestApp/screenshot_one.png"/>
