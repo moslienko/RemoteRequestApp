@@ -7,17 +7,19 @@
 
 import Foundation
 
-class CodeGenerateService {
+final class CodeGenerateService {
     
     enum StructType {
-        case resp, model
+        case response, model, request
         
         var name: String {
             switch self {
-            case .resp:
+            case .response:
                 return "Response"
             case .model:
                 return "Model"
+            case .request:
+                return "Request"
             }
         }
     }
@@ -39,10 +41,10 @@ class CodeGenerateService {
         
         func generateStructCode(name: String, dict: [String: Any]) -> (String, String) {
             let importCode = "import Foundation\nimport RemoteRequest\n\n"
-            let structName = "\(name.capitalized)Response"
+            let structName = "\(name.capitalized)\(StructType.response.name)"
             var structCode = "class \(structName): ObjectMappable {\n"
             
-            structCode += "\n\(tab)typealias MappableOutput = \(name.capitalized)Model\n\n"
+            structCode += "\n\(tab)typealias MappableOutput = \(name.capitalized)\(StructType.model.name)\n\n"
             var properties = ""
             var propertiesModel = ""
             var codingKeys = "\n\(tab)enum CodingKeys: String, CodingKey {\n"
@@ -80,14 +82,14 @@ class CodeGenerateService {
                     let nestedStructName = key.capitalized
                     if !generatedStructs.contains(nestedStructName) {
                         let (nestedStructCode, nestedModelCode) = generateStructCode(name: nestedStructName, dict: nestedDict)
-                        responseClasses.append(CodeFileModel(name: "\(nestedStructName)Response", code: nestedStructCode))
-                        domainModels.append(CodeFileModel(name: "\(nestedStructName)Model", code: nestedModelCode))
+                        responseClasses.append(CodeFileModel(name: "\(nestedStructName)\(StructType.response.name)", code: nestedStructCode))
+                        domainModels.append(CodeFileModel(name: "\(nestedStructName)\(StructType.model.name)", code: nestedModelCode))
                         generatedStructs.insert(nestedStructName)
                     }
-                    properties += "\(tab)var \(key): \(nestedStructName)Response\n"
-                    propertiesModel += "\(tab)var \(key): \(nestedStructName)Model\n"
+                    properties += "\(tab)var \(key): \(nestedStructName)\(StructType.response.name)\n"
+                    propertiesModel += "\(tab)var \(key): \(nestedStructName)\(StructType.model.name)\n"
                     codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
-                    initParams += "\(key): \(nestedStructName)Model, "
+                    initParams += "\(key): \(nestedStructName)\(StructType.model.name), "
                     initAssignments += "\(tab)\(tab)self.\(key) = \(key)\n"
                 case let array as [Any]:
                     if let firstElement = array.first {
@@ -117,12 +119,11 @@ class CodeGenerateService {
                             if !generatedStructs.contains(nestedStructName) {
                                 let (nestedStructCode, nestedModelCode) = generateStructCode(name: nestedStructName, dict: elementDict)
                                 responseClasses.append(CodeFileModel(name: nestedStructName, code: nestedStructCode))
-                                domainModels.append(CodeFileModel(name: "nestedModelCode", code: nestedModelCode))
                                 generatedStructs.insert(nestedStructName)
                             }
-                            properties += "\(tab)var \(key): [\(nestedStructName)Response]\n"
+                            properties += "\(tab)var \(key): [\(nestedStructName)\(StructType.response.name)]\n"
                             codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
-                            initParams += "\(key): [\(nestedStructName)Response], "
+                            initParams += "\(key): [\(nestedStructName)\(StructType.response.name)], "
                             initAssignments += "\(tab)\(tab)self.\(key) = \(key)\n"
                         default:
                             properties += "\(tab)var \(key): [String]\n"
@@ -145,7 +146,6 @@ class CodeGenerateService {
             structCode += codingKeys
             structCode += "}\n\n"
             
-            
             var guardStatements = ""
             let respModels = dict.filter({ $0.value is [String: Any] })
             let simpleModels = dict.filter({ !($0.value is [String: Any]) })
@@ -155,14 +155,13 @@ class CodeGenerateService {
                 
                 respModels.enumerated().forEach({ (index, data) in
                     let key = data.0
-                    let value = data.1
                     let isLast = index == respModels.count - 1
                     
                     guardStatements += "\(tab)\(tab) let \(key) = self.\(key).createModel()\(isLast ? "" : ",")\n"
                     if isLast {
                         guardStatements += "else {\n"
                         guardStatements += "\(tab)\(tab)return nil\n"
-                        guardStatements += "\(tab)\(tab)}\n"
+                        guardStatements += "\(tab)\(tab)}\n\n"
                     }
                     
                     initModelParams += "\(tab)\(tab)\(tab)\(key): \(key),\n"
@@ -177,8 +176,8 @@ class CodeGenerateService {
                 initModelParams = String(initModelParams.dropLast(2))  //Remove last comma
             }
             
-            structCode += "\(tab)func createModel() -> \(name.capitalized)Model? {\n\(guardStatements)\n"
-            structCode += "\(tab)\(tab)return \(name.capitalized)Model(\n\(initModelParams)\n\(tab)\(tab))\n"
+            structCode += "\(tab)func createModel() -> \(name.capitalized)\(StructType.model.name)? {\n\(guardStatements)"
+            structCode += "\(tab)\(tab)return \(name.capitalized)\(StructType.model.name)(\n\(initModelParams)\n\(tab)\(tab))\n"
             structCode += "\(tab)}\n"
             
             structCode += "}\n\n"
@@ -187,7 +186,7 @@ class CodeGenerateService {
                 initParams = String(initParams.dropLast(2))
             }
             
-            var modelStruct = "struct \(name.capitalized)Model {\n"
+            var modelStruct = "struct \(name.capitalized)\(StructType.model.name) {\n"
             modelStruct += propertiesModel
             modelStruct += "\n\(tab)init(\(initParams)) {\n"
             modelStruct += initAssignments
@@ -225,15 +224,15 @@ class CodeGenerateService {
                     propertiesModel += "\(tab)var \(key): Bool\n"
                     codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
                 case let nestedDict as [String: Any]:
-                    let nestedStructName = key.capitalized + "Request"
+                    let nestedStructName = key.capitalized + StructType.request.name
                     
                     if !generatedStructs.contains(nestedStructName) {
                         let nestedStructCode = generateRequestCode(name: nestedStructName, dict: nestedDict)
-                        requestModels.append(CodeFileModel(name: "\(nestedStructName)Request", code: nestedStructCode))
+                        requestModels.append(CodeFileModel(name: "\(nestedStructName)\(StructType.request.name)", code: nestedStructCode))
                         generatedStructs.insert(nestedStructName)
                     }
                     properties += "\(tab)var \(key): \(nestedStructName)\n"
-                    propertiesModel += "\(tab)var \(key): \(nestedStructName)Model\n"
+                    propertiesModel += "\(tab)var \(key): \(nestedStructName)\(StructType.model.name)\n"
                     codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
                 case let array as [Any]:
                     if let firstElement = array.first {
@@ -251,7 +250,7 @@ class CodeGenerateService {
                             properties += "\(tab)var \(key): [Bool]\n"
                             codingKeys += "\(tab)\(tab)case \(key) = \"\(key)\"\n"
                         case let elementDict as [String: Any]:
-                            let nestedStructName = key.capitalized + "Request"
+                            let nestedStructName = key.capitalized + StructType.request.name
                             if !generatedStructs.contains(nestedStructName) {
                                 let nestedStructCode = generateRequestCode(name: nestedStructName, dict: elementDict)
                                 requestModels.append(CodeFileModel(name: nestedStructName, code: nestedStructCode))
@@ -279,11 +278,10 @@ class CodeGenerateService {
             return importCode + requestCode
         }
         let (responseCode, modelCode) = generateStructCode(name: params.mainResponseName, dict: jsonDict)
-        print("responseCode - \(responseCode), modelCode - \(modelCode)")
-        responseClasses.append(CodeFileModel(name: "\(params.mainResponseName)Response", code: responseCode))
-        domainModels.append(CodeFileModel(name: "\(params.mainResponseName)Model", code: modelCode))
+        responseClasses.append(CodeFileModel(name: "\(params.mainResponseName)\(StructType.response.name)", code: responseCode))
+        domainModels.append(CodeFileModel(name: "\(params.mainResponseName)\(StructType.model.name)", code: modelCode))
         
-        let requestCode = generateRequestCode(name: "\(params.mainResponseName)Request", dict: jsonDict)
+        let requestCode = generateRequestCode(name: "\(params.mainResponseName)\(StructType.request.name)", dict: jsonDict)
         requestModels.append(CodeFileModel(name: "\(params.mainResponseName)", code: requestCode))
         
         let routeCode = generateRoute(
@@ -314,16 +312,16 @@ class CodeGenerateService {
         // @Route
         structCode += """
     \(tab)// Select one of the methods\n
-    \(tab)func fetchItems(completion: @escaping (ResultData<[\(modelName)Model]>) -> Void) {
-    \(tab)\(tab)@Route<[\(modelName)Response], [\(modelName)Model], RegRestErrorResponse>(Routes.baseURL + "\(url)", method: .\(method.rawValue.lowercased()))"
+    \(tab)func fetchItems(completion: @escaping (ResultData<[\(modelName)\(StructType.model.name)]>) -> Void) {
+    \(tab)\(tab)@Route<[\(modelName)\(StructType.response.name)], [\(modelName)\(StructType.model.name)], RegRestErrorResponse>(Routes.baseURL + "\(url)", method: .\(method.rawValue.lowercased()))"
     \(tab)\(tab)var request: URLRequest
     \(tab)\(tab)_request.runRequest(completion: completion)
     \(tab)}\n\n
     """
         // @Method
         structCode += """
-    \(tab)func fetchItems(completion: @escaping (ResultData<[\(modelName)Model]>) -> Void) {
-    \(tab)\(tab)@\(method.rawValue.uppercased())<[\(modelName)Response], [\(modelName)Model], RegRestErrorResponse>(Routes.baseURL + "\(url)")
+    \(tab)func fetchItems(completion: @escaping (ResultData<[\(modelName)\(StructType.model.name)]>) -> Void) {
+    \(tab)\(tab)@\(method.rawValue.uppercased())<[\(modelName)\(StructType.response.name)], [\(modelName)\(StructType.model.name)], RegRestErrorResponse>(Routes.baseURL + "\(url)")
     \(tab)\(tab)var request: RouteRestProtocol
     \(tab)\(tab)request.runRequest(completion: completion)
     \(tab)}\n\n
@@ -331,8 +329,8 @@ class CodeGenerateService {
         // Async/await
         structCode += """
     \(tab)@available(iOS 15.0, *)
-    \(tab)func fetchItemsAwait() async throws -> Result<[\(modelName)Model], Error> {
-    \(tab)\(tab)@Route<[\(modelName)Response], [\(modelName)Model], RegRestErrorResponse>(Routes.baseURL + "\(url)", method: .\(method.rawValue.lowercased()))"
+    \(tab)func fetchItemsAwait() async throws -> Result<[\(modelName)\(StructType.model.name)], Error> {
+    \(tab)\(tab)@Route<[\(modelName)\(StructType.response.name)], [\(modelName)\(StructType.model.name)], RegRestErrorResponse>(Routes.baseURL + "\(url)", method: .\(method.rawValue.lowercased()))"
     \(tab)\(tab)var request: URLRequest
     \(tab)\(tab)return try await _request.runRequest()
     \(tab)}\n\n
